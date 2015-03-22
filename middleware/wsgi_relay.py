@@ -1,15 +1,21 @@
-class WsgiRelayMiddleware(object):
-    def __init__(self, app, conf):
-        self.app = app
+import wsgiproxy.app
+import wsgiproxy.exactproxy
+import sys
+
+def druk(s):
+    with open('/tmp/zupa', 'a') as f:
+        f.write(s + "\n")
+
+class Application(object):
+    def __init__(self, conf):
+        pass
  
     def __call__(self, env, start_response):
-        return self.app(env, start_response)
+        env['SERVER_PORT'] = 8000
+        env['PATH_INFO'] = '/swift' + env['PATH_INFO']
+        return wsgiproxy.exactproxy.proxy_exact_request(env, start_response)
  
 
-def filter_factory(global_conf, **local_conf):
+def app_factory(global_conf, **local_conf):
     conf = global_conf.copy()
-    conf.update(local_conf)
- 
-    def wsgi_relay_filter(app):
-        return WsgiRelayMiddleware(app, conf)
-    return wsgi_relay_filter
+    return Application(conf)
