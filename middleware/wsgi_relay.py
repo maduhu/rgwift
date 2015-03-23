@@ -39,10 +39,12 @@ class Application(object):
         if req.method in ('GET', 'HEAD'):
             resp_handler = relay_start_response
 
-        env['SERVER_PORT'] = 8000
-        env['PATH_INFO'] = '/swift' + env['PATH_INFO']
 
-        return wsgiproxy.exactproxy.proxy_exact_request(env, resp_handler)
+        new_env = env.copy()
+        new_env['SERVER_PORT'] = 8000
+        new_env['PATH_INFO'] = '/swift' + env['PATH_INFO']
+
+        return wsgiproxy.exactproxy.proxy_exact_request(new_env, resp_handler)
  
 
 def app_factory(global_conf, **local_conf):
