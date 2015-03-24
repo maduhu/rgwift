@@ -39,6 +39,21 @@ class Application(object):
         if req.method in ('GET', 'HEAD'):
             resp_handler = relay_start_response
 
+        if 'swift.authorize' in req.environ:
+            # We call authorize before the handler, always. If authorized,
+            # we remove the swift.authorize hook so isn't ever called
+            # again. If not authorized, we return the denial unless the
+            # controller's method indicates it'd like to gather more
+            # information and try again later.
+            resp = req.environ['swift.authorize'](req)
+            if not resp and not req.headers.get('X-Copy-From-Account') \
+                    and not req.headers.get('Destination-Account'):
+                # No resp means authorized, no delayed recheck required.
+                del req.environ['swift.authorize']
+            else:
+                # Response indicates denial, but we might delay the denial
+                # and recheck later. If not delayed, return the error now.
+                return resp(env, resp_handler)
 
         new_env = env.copy()
         new_env['SERVER_PORT'] = 8000
