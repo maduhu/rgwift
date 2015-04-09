@@ -17,6 +17,18 @@ class Application(object):
             int(conf.get('recheck_account_existence', 60))
         return
 
+    def clean_acls(self, req):
+        if 'swift.clean_acl' in req.environ:
+            for header in ('x-container-read', 'x-container-write'):
+                if header in req.headers:
+                    try:
+                        req.headers[header] = \
+                            req.environ['swift.clean_acl'](header,
+                                                           req.headers[header])
+                    except ValueError as err:
+                        return HTTPBadRequest(request=req, body=str(err))
+        return None
+
     def cache_getorhead_resp(self, resp):
         pass
 
@@ -59,7 +71,11 @@ class Application(object):
         new_env['SERVER_PORT'] = 8000
         new_env['PATH_INFO'] = '/swift' + env['PATH_INFO']
 
-        return wsgiproxy.exactproxy.proxy_exact_request(new_env, resp_handler)
+        error_response = None
+        if req.method in ('PUT', 'POST'):
+            error_response = self.clean_acls(req)
+
+        return error_response or wsgiproxy.exactproxy.proxy_exact_request(new_env, resp_handler)
  
 
 def app_factory(global_conf, **local_conf):
