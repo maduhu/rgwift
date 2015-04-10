@@ -33,6 +33,7 @@ class Application(object):
         pass
 
     def __call__(self, env, start_response):
+        new_env = env.copy()
         req = Request(env)
 
         try:
@@ -60,14 +61,17 @@ class Application(object):
             resp = req.environ['swift.authorize'](req)
             if not resp and not req.headers.get('X-Copy-From-Account') \
                     and not req.headers.get('Destination-Account'):
+                pass
                 # No resp means authorized, no delayed recheck required.
-                del req.environ['swift.authorize']
             else:
                 # Response indicates denial, but we might delay the denial
                 # and recheck later. If not delayed, return the error now.
-                return resp(env, resp_handler)
+                if container and req.method in ('GET', 'HEAD'):
+                    pass
+                else:
+                    return resp(env, resp_handler)
 
-        new_env = env.copy()
+        new_env['wsgi.url_scheme'] = 'http'
         new_env['SERVER_PORT'] = 8000
         new_env['PATH_INFO'] = '/swift' + env['PATH_INFO']
 
@@ -75,7 +79,16 @@ class Application(object):
         if req.method in ('PUT', 'POST'):
             error_response = self.clean_acls(req)
 
-        return error_response or wsgiproxy.exactproxy.proxy_exact_request(new_env, resp_handler)
+        new_req = Request(new_env)
+        resp = new_req.get_response(wsgiproxy.exactproxy.proxy_exact_request)
+        if container and req.method in ('GET', 'HEAD') and 'swift.authorize' in req.environ:
+            if not obj:
+                req.acl = resp.headers.get('x-container-read')
+            else:
+                req.acl = '.r:*'
+            error_response = req.environ['swift.authorize'](req)
+
+        return (error_response or resp)(new_env, resp_handler)
  
 
 def app_factory(global_conf, **local_conf):
