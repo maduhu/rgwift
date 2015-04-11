@@ -20,4 +20,4 @@ from swift.common.wsgi import run_wsgi
 
 if __name__ == '__main__':
     conf_file, options = parse_options()
-    sys.exit(run_wsgi(conf_file, 'middleware-server', default_port=7070, **options))
+    sys.exit(run_wsgi(conf_file, 'rgwift', default_port=7070, **options))
