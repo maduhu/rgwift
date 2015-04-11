@@ -1,14 +1,48 @@
-import wsgiproxy.app
-import wsgiproxy.exactproxy
-import sys
-
 from swift.common.swob import Request, Response, wsgify
 from swift.common.utils import public
 from swift.proxy.controllers.base import _set_info_cache
 
+from wsgiproxy.exactproxy import proxy_exact_request as wsgi_proxy
+
 
 class BaseController(object):
-    pass
+    def _forward_request(self, req):
+        """
+        Forward the request using wsgi_proxy to real Swift backend
+        """
+        new_env = req.environ.copy()
+        new_env['wsgi.url_scheme'] = 'http'
+        new_env['SERVER_PORT'] = 8000
+        new_env['PATH_INFO'] = '/swift' + env['PATH_INFO']
+        return Request(new_env).get_response(wsgi_proxy)
+
+    @public
+    def GET(self, req):
+        return self._forward_request(req)
+
+    @public
+    def HEAD(self, req):
+        return self._forward_request(req)
+
+    @public
+    def POST(self, req):
+        return self._forward_request(req)
+
+    @public
+    def PUT(self, req):
+        return self._forward_request(req)
+
+    @public
+    def COPY(self, req):
+        return self._forward_request(req)
+
+    @public
+    def DELETE(self, req):
+        return self._forward_request(req)
+
+    @public
+    def OPTIONS(self, req):
+        return self._forward_request(req)
 
 
 class AccountController(BaseController):
