@@ -1,5 +1,5 @@
 from swift.common.swob import Request, Response, wsgify
-from swift.common.utils import public
+from swift.common.utils import split_path, public
 from swift.proxy.controllers.base import _set_info_cache
 
 from wsgiproxy.exactproxy import proxy_exact_request as wsgi_proxy
@@ -13,7 +13,7 @@ class BaseController(object):
         new_env = req.environ.copy()
         new_env['wsgi.url_scheme'] = 'http'
         new_env['SERVER_PORT'] = 8000
-        new_env['PATH_INFO'] = '/swift' + env['PATH_INFO']
+        new_env['PATH_INFO'] = '/swift' + req.environ['PATH_INFO']
         return Request(new_env).get_response(wsgi_proxy)
 
     @public
@@ -69,11 +69,11 @@ class RgwiftApp(object):
         version, account, container, obj = split_path(path, 1, 4, True)
 
         if obj:
-            return ObjectController
-        else if container:
-            return ContainerController
-        else if account:
-            return AccountController
+            return ObjectController()
+        elif container:
+            return ContainerController()
+        elif account:
+            return AccountController()
         return None
 
     def get_handler(self, controller, req):
@@ -96,12 +96,12 @@ class RgwiftApp(object):
         except:
             raise
         else:
-            # We need to return wsgi callable which will be called
-            # in wsgify decorator. It should handle HTTPException's
+            # We need to return a WSGI callable which will be called
+            # by wsgify decorator. It should handle HTTPExceptions
             # as well.
             return wsgi_handler
 
 
 def app_factory(global_conf, **local_conf):
     conf = global_conf.copy()
-    return Application(conf)
+    return RgwiftApp(conf)
