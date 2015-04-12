@@ -6,7 +6,16 @@ from wsgiproxy.exactproxy import proxy_exact_request as wsgi_proxy
 
 
 class BaseController(object):
-    def _forward_request(self, req):
+    def try_deny(self, req):
+        if 'swift.authorize' in req.environ:
+            aresp = req.environ['swift.authorize'](req)
+            del req.environ['swift.authorize']
+        else:
+            # None means authorized.
+            aresp = None
+        return aresp
+
+    def forward_request(self, req):
         """
         Forward the request using wsgi_proxy to real Swift backend
         """
@@ -18,31 +27,31 @@ class BaseController(object):
 
     @public
     def GET(self, req):
-        return self._forward_request(req)
+        return self.try_deny(req) or self.forward_request(req)
 
     @public
     def HEAD(self, req):
-        return self._forward_request(req)
+        return self.try_deny(req) or self.forward_request(req)
 
     @public
     def POST(self, req):
-        return self._forward_request(req)
+        return self.try_deny(req) or self.forward_request(req)
 
     @public
     def PUT(self, req):
-        return self._forward_request(req)
+        return self.try_deny(req) or self.forward_request(req)
 
     @public
     def COPY(self, req):
-        return self._forward_request(req)
+        return self.try_deny(req) or self.forward_request(req)
 
     @public
     def DELETE(self, req):
-        return self._forward_request(req)
+        return self.try_deny(req) or self.forward_request(req)
 
     @public
     def OPTIONS(self, req):
-        return self._forward_request(req)
+        return self.forward_request(req)
 
 
 class AccountController(BaseController):
