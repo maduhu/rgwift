@@ -1,11 +1,16 @@
 from swift.common.swob import Request, Response, wsgify
 from swift.common.utils import split_path, public
-from swift.proxy.controllers.base import _set_info_cache
+# Yeap, we are using private method. God, forgive me!
+from swift.proxy.controllers.base import _set_info_cache as set_info_cache
 
 from wsgiproxy.exactproxy import proxy_exact_request as wsgi_proxy
 
 
 class BaseController(object):
+    def __init__(self, app):
+        self._app = app
+        return
+
     def try_deny(self, req):
         if 'swift.authorize' in req.environ:
             aresp = req.environ['swift.authorize'](req)
@@ -25,13 +30,21 @@ class BaseController(object):
         new_env['PATH_INFO'] = '/swift' + req.environ['PATH_INFO']
         return Request(new_env).get_response(wsgi_proxy)
 
+    def GETorHEAD(self, req):
+        resp = self.try_deny(req)
+        if not resp:
+            resp = self.forward_request(req)
+            version, account, container, obj = req.split_path(2, 4, True)
+            set_info_cache(self._app, req.environ, account, container, resp)
+        return resp
+
     @public
     def GET(self, req):
-        return self.try_deny(req) or self.forward_request(req)
+        return self.GETorHEAD(req)
 
     @public
     def HEAD(self, req):
-        return self.try_deny(req) or self.forward_request(req)
+        return self.GETorHEAD(req)
 
     @public
     def POST(self, req):
@@ -78,11 +91,11 @@ class RgwiftApp(object):
         version, account, container, obj = split_path(path, 1, 4, True)
 
         if obj:
-            return ObjectController()
+            return ObjectController(self)
         elif container:
-            return ContainerController()
+            return ContainerController(self)
         elif account:
-            return AccountController()
+            return AccountController(self)
         return None
 
     def get_handler(self, controller, req):
