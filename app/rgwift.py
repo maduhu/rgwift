@@ -1,7 +1,9 @@
 from swift.common.swob import Request, Response, wsgify
 from swift.common.utils import split_path, public
 # FIXME: Yeap, we are using private method. God, forgive me!
-from swift.proxy.controllers.base import _set_info_cache as set_info_cache
+from swift.proxy.controllers.base import _set_info_cache as set_info_cache, \
+        clear_info_cache
+from swift.proxy.controllers.base import get_container_info, get_object_info
 
 from wsgiproxy.exactproxy import proxy_exact_request as wsgi_proxy
 
@@ -49,12 +51,7 @@ class BaseController(object):
         return Request(new_env).get_response(wsgi_proxy)
 
     def GETorHEAD(self, req):
-        resp = self.try_deny(req)
-        if not resp:
-            resp = self.forward_request(req)
-            version, account, container, obj = req.split_path(2, 4, True)
-            set_info_cache(self._app, req.environ, account, container, resp)
-        return resp
+        return self.try_deny(req) or self.forward_request(req)
 
     @public
     def GET(self, req):
@@ -88,15 +85,35 @@ class BaseController(object):
 
 
 class AccountController(BaseController):
-    pass
+    def GETorHEAD(self, req):
+        resp = self.forward_request(req)
+        version, account, container, obj = req.split_path(2, 4, True)
+        set_info_cache(self._app, req.environ, account, container, resp)
+        return self.try_deny(req) or resp
 
 
 class ContainerController(BaseController):
-    pass
+    def GETorHEAD(self, req):
+        resp = self.forward_request(req)
+        version, account, container, obj = req.split_path(2, 4, True)
+        set_info_cache(self._app, req.environ, account, container, resp)
+
+        # Enchance the request with ACL-related stuff before trying to deny.
+        req.acl = resp.headers.get('x-container-read')
+        return self.try_deny(req) or resp
 
 
 class ObjectController(BaseController):
-    pass
+    def GETorHEAD(self, req):
+        resp = self.forward_request(req)
+        # Enchance the request with ACL-related stuff before trying to deny.
+        version, account, container, obj = req.split_path(2, 4, True)
+        container_info = get_container_info(req.environ, self._app)
+        try:
+            req.acl = container_info['x-container-read']
+        except (KeyError):
+            pass
+        return self.try_deny(req) or resp
 
 
 class RgwiftApp(object):
