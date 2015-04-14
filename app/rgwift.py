@@ -11,6 +11,19 @@ class BaseController(object):
         self._app = app
         return
 
+    def clean_acls(self, req):
+        if 'swift.clean_acl' not in req.environ:
+            return None
+        for header in ('x-container-read', 'x-container-write'):
+            if header in req.headers:
+                try:
+                    req.headers[header] = \
+                        req.environ['swift.clean_acl'](header,
+                                                       req.headers[header])
+                except ValueError as err:
+                    return HTTPBadRequest(request=req, body=str(err))
+        return None
+
     def try_deny(self, req):
         if 'swift.authorize' in req.environ:
             aresp = req.environ['swift.authorize'](req)
@@ -48,11 +61,13 @@ class BaseController(object):
 
     @public
     def POST(self, req):
-        return self.try_deny(req) or self.forward_request(req)
+        return self.try_deny(req) or self.clean_acls(req) or \
+               self.forward_request(req)
 
     @public
     def PUT(self, req):
-        return self.try_deny(req) or self.forward_request(req)
+        return self.try_deny(req) or self.clean_acls(req) or \
+               self.forward_request(req)
 
     @public
     def COPY(self, req):
