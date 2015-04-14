@@ -1,6 +1,6 @@
 from swift.common.swob import Request, Response, wsgify
 from swift.common.utils import split_path, public
-# Yeap, we are using private method. God, forgive me!
+# FIXME: Yeap, we are using private method. God, forgive me!
 from swift.proxy.controllers.base import _set_info_cache as set_info_cache
 
 from wsgiproxy.exactproxy import proxy_exact_request as wsgi_proxy
@@ -8,6 +8,11 @@ from wsgiproxy.exactproxy import proxy_exact_request as wsgi_proxy
 
 class BaseController(object):
     def __init__(self, app):
+        # The intention behind passing reference to instance of RgwiftApp
+        # class is to provide Controllers with an ability to:
+        #   1) access configutation options which are inspected
+        #      by some Swift utility functions like set_info_cache();
+        #   2) issue further HTTP requests.
         self._app = app
         return
 
