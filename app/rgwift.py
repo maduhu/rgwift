@@ -1,4 +1,4 @@
-from swift.common.swob import Request, Response, wsgify
+from swift.common.swob import HTTPMethodNotAllowed, Request, Response, wsgify
 from swift.common.utils import split_path, public
 # FIXME: Yeap, we are using private method. God, forgive me!
 from swift.proxy.controllers.base import _set_info_cache as set_info_cache, \
