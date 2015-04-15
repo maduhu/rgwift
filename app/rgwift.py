@@ -9,13 +9,18 @@ from wsgiproxy.exactproxy import proxy_exact_request as wsgi_proxy
 
 
 class BaseController(object):
-    def __init__(self, app):
+    def __init__(self, app, ver, account = None, container = None, obj = None):
         # The intention behind passing reference to instance of RgwiftApp
         # class is to provide Controllers with an ability to:
         #   1) access configutation options which are inspected
         #      by some Swift utility functions like set_info_cache();
         #   2) issue further HTTP requests.
         self._app = app
+
+        self.ver = ver
+        self.account = account
+        self.container = container
+        self.obj = obj
         return
 
     def clean_acls(self, req):
@@ -87,16 +92,16 @@ class BaseController(object):
 class AccountController(BaseController):
     def GETorHEAD(self, req):
         resp = self.forward_request(req)
-        version, account, container, obj = req.split_path(2, 4, True)
-        set_info_cache(self._app, req.environ, account, container, resp)
+        set_info_cache(self._app, req.environ, self.account,
+                self.container, resp)
         return self.try_deny(req) or resp
 
 
 class ContainerController(BaseController):
     def GETorHEAD(self, req):
         resp = self.forward_request(req)
-        version, account, container, obj = req.split_path(2, 4, True)
-        set_info_cache(self._app, req.environ, account, container, resp)
+        set_info_cache(self._app, req.environ, self.account,
+                self.container, resp)
 
         # Enchance the request with ACL-related stuff before trying to deny.
         req.acl = resp.headers.get('x-container-read')
@@ -107,7 +112,6 @@ class ObjectController(BaseController):
     def GETorHEAD(self, req):
         resp = self.forward_request(req)
         # Enchance the request with ACL-related stuff before trying to deny.
-        version, account, container, obj = req.split_path(2, 4, True)
         container_info = get_container_info(req.environ, self._app)
         try:
             req.acl = container_info['x-container-read']
@@ -125,14 +129,15 @@ class RgwiftApp(object):
         return
 
     def get_controller(self, path):
-        version, account, container, obj = split_path(path, 1, 4, True)
+        path_elems = split_path(path, 1, 4, True)
+        version, account, container, obj = path_elems
 
         if obj:
-            return ObjectController(self)
+            return ObjectController(self, path_elems)
         elif container:
-            return ContainerController(self)
+            return ContainerController(self, path_elems)
         elif account:
-            return AccountController(self)
+            return AccountController(self, path_elems)
         return None
 
     def get_handler(self, controller, req):
