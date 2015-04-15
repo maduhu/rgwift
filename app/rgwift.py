@@ -5,7 +5,7 @@ from swift.proxy.controllers.base import _set_info_cache as set_info_cache, \
         clear_info_cache
 from swift.proxy.controllers.base import get_container_info, get_object_info
 
-from wsgiproxy.exactproxy import proxy_exact_request as wsgi_proxy
+from wsgiproxy.app import WSGIProxyApp
 
 
 class BaseController(object):
@@ -49,11 +49,10 @@ class BaseController(object):
         """
         Forward the request using wsgi_proxy to real Swift backend
         """
-        new_env = req.environ.copy()
-        new_env['wsgi.url_scheme'] = 'http'
-        new_env['SERVER_PORT'] = 8000
-        new_env['PATH_INFO'] = '/swift' + req.environ['PATH_INFO']
-        return Request(new_env).get_response(wsgi_proxy)
+        if 'REMOTE_ADDR' not in req.environ:
+            req.environ['REMOTE_ADDR'] = '127.0.0.1'
+        return req.get_response(
+                WSGIProxyApp(href='http://127.0.0.1:8000/swift'))
 
     def GETorHEAD(self, req):
         return self.try_deny(req) or self.forward_request(req)
