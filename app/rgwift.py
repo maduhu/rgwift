@@ -11,9 +11,9 @@ from wsgiproxy.exactproxy import proxy_exact_request as wsgi_proxy
 class BaseController(object):
     def __init__(self, app, ver, account = None, container = None, obj = None):
         # The intention behind passing reference to instance of RgwiftApp
-        # class is to provide Controllers with an ability to:
-        #   1) access configutation options which are inspected
-        #      by some Swift utility functions like set_info_cache();
+        # class is to provide controllers with ability to:
+        #   1) access configutation options. Some of them are inspected
+        #      by Swift utility functions like set_info_cache();
         #   2) issue further HTTP requests.
         self._app = app
 
