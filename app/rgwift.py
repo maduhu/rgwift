@@ -96,6 +96,22 @@ class AccountController(BaseController):
                 self.container, resp)
         return self.try_deny(req) or resp
 
+    @public
+    def POST(self, req):
+        clear_info_cache(self._app, req.environ, self.account)
+        return self.try_deny(req) or self.clean_acls(req) or \
+               self.forward_request(req)
+
+    @public
+    def PUT(self, req):
+        clear_info_cache(self._app, req.environ, self.account)
+        return self.try_deny(req) or self.clean_acls(req) or \
+               self.forward_request(req)
+
+    @public
+    def DELETE(self, req):
+        clear_info_cache(self._app, req.environ, self.account)
+        return self.try_deny(req) or self.forward_request(req)
 
 class ContainerController(BaseController):
     def GETorHEAD(self, req):
@@ -106,6 +122,23 @@ class ContainerController(BaseController):
         # Enchance the request with ACL-related stuff before trying to deny.
         req.acl = resp.headers.get('x-container-read')
         return self.try_deny(req) or resp
+
+    @public
+    def POST(self, req):
+        clear_info_cache(self._app, req.environ, self.account, self.container)
+        return self.try_deny(req) or self.clean_acls(req) or \
+               self.forward_request(req)
+
+    @public
+    def PUT(self, req):
+        clear_info_cache(self._app, req.environ, self.account, self.container)
+        return self.try_deny(req) or self.clean_acls(req) or \
+               self.forward_request(req)
+
+    @public
+    def DELETE(self, req):
+        clear_info_cache(self._app, req.environ, self.account, self.container)
+        return self.try_deny(req) or self.forward_request(req)
 
 
 class ObjectController(BaseController):
