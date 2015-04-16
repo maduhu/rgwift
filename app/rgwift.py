@@ -125,19 +125,22 @@ class ContainerController(BaseController):
 
     @public
     def POST(self, req):
-        clear_info_cache(self._app, req.environ, self.account, self.container)
+        clear_info_cache(self._app, req.environ, self.account,
+                         self.container)
         return self.try_deny(req) or self.clean_acls(req) or \
             self.forward_request(req)
 
     @public
     def PUT(self, req):
-        clear_info_cache(self._app, req.environ, self.account, self.container)
+        clear_info_cache(self._app, req.environ, self.account,
+                         self.container)
         return self.try_deny(req) or self.clean_acls(req) or \
             self.forward_request(req)
 
     @public
     def DELETE(self, req):
-        clear_info_cache(self._app, req.environ, self.account, self.container)
+        clear_info_cache(self._app, req.environ, self.account,
+                         self.container)
         return self.try_deny(req) or self.forward_request(req)
 
 
