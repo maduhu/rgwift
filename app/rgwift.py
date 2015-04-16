@@ -1,5 +1,5 @@
 from swift.common.swob import HTTPMethodNotAllowed, Request, Response, wsgify
-from swift.common.utils import split_path, public
+from swift.common.utils import get_logger, split_path, public
 # FIXME: Yeap, we are using private method. God, forgive me!
 from swift.proxy.controllers.base import _set_info_cache as set_info_cache, \
     clear_info_cache
@@ -14,7 +14,8 @@ class BaseController(object):
         # class is to provide controllers with ability to:
         #   1) access configutation options. Some of them are inspected
         #      by Swift utility functions like set_info_cache();
-        #   2) issue further HTTP requests.
+        #   2) issue further HTTP requests;
+        #   3) use the logger.
         self._app = app
 
         self.ver = ver
@@ -22,6 +23,10 @@ class BaseController(object):
         self.container = container
         self.obj = obj
         return
+
+    def __str__(self):
+        return '{0}: {1}, {2}, {3}, {4}'.format(type(self).__name__, self.ver,
+            self.account, self.container, self.obj)
 
     def clean_acls(self, req):
         if 'swift.clean_acl' not in req.environ:
@@ -91,6 +96,7 @@ class BaseController(object):
 class AccountController(BaseController):
     def GETorHEAD(self, req):
         resp = self.forward_request(req)
+        self._app.logger.debug(str(self) + ' got acct resp = ' + str(resp))
         set_info_cache(self._app, req.environ, self.account,
                        self.container, resp)
         return self.try_deny(req) or resp
@@ -162,6 +168,7 @@ class RgwiftApp(object):
             int(conf.get('recheck_container_existence', 60))
         self.recheck_account_existence = \
             int(conf.get('recheck_account_existence', 60))
+        self.logger = get_logger(conf, log_route='rgwift', log_to_console=True)
         return
 
     def get_controller(self, path):
