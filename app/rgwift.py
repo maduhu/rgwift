@@ -178,11 +178,11 @@ class RgwiftApp(object):
         version, account, container, obj = path_elems
 
         if obj:
-            return ObjectController(self, path_elems)
+            return ObjectController(self, *path_elems)
         elif container:
-            return ContainerController(self, path_elems)
+            return ContainerController(self, *path_elems)
         elif account:
-            return AccountController(self, path_elems)
+            return AccountController(self, *path_elems)
         return None
 
     def get_handler(self, controller, req):
