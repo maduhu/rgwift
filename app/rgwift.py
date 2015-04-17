@@ -56,6 +56,8 @@ class BaseController(object):
         """
         if 'REMOTE_ADDR' not in req.environ:
             req.environ['REMOTE_ADDR'] = '127.0.0.1'
+        if 'wsgi.url_scheme' not in req.environ:
+            req.environ['wsgi.url_scheme'] = 'http'
         return req.get_response(
             WSGIProxyApp(href='http://127.0.0.1:8000/swift'))
 
