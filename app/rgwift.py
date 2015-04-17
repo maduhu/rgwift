@@ -158,9 +158,10 @@ class ObjectController(BaseController):
         # Enchance the request with ACL-related stuff before trying to deny.
         container_info = get_container_info(req.environ, self._app)
         try:
-            req.acl = container_info['x-container-read']
+            req.acl = container_info['read_acl']
         except (KeyError):
             pass
+        self._app.logger.debug(str(self) + ' got cont acls = ' + str(req.acl))
         return self.try_deny(req) or resp
 
 
