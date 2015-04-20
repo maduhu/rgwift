@@ -158,6 +158,10 @@ class ObjectController(BaseController):
         # Enchance the request with ACL-related stuff before trying to deny.
         container_info = get_container_info(req.environ, self._app)
         try:
+            # The key name might be a litte misleading, so be informed it's
+            # just an alias to well-known X-Container-Read HTTP header.
+            # ACL-related HTTP headers (X-Container-{Read, Write}) are converted
+            # into {read, write}_acl by headers_to_container_info().
             req.acl = container_info['read_acl']
         except (KeyError):
             pass
