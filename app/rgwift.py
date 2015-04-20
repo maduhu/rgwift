@@ -168,6 +168,24 @@ class ObjectController(BaseController):
         self._app.logger.debug(str(self) + ' got cont acls = ' + str(req.acl))
         return self.try_deny(req) or resp
 
+    @public
+    def PUT(self, req):
+        container_info = get_container_info(req.environ, self._app)
+        req.acl = container_info['write_acl']
+        return self.try_deny(req) or self.clean_acls(req) or \
+            self.forward_request(req)
+
+    @public
+    def COPY(self, req):
+        container_info = get_container_info(req.environ, self._app)
+        req.acl = container_info['write_acl']
+        return self.try_deny(req) or self.forward_request(req)
+
+    @public
+    def DELETE(self, req):
+        container_info = get_container_info(req.environ, self._app)
+        req.acl = container_info['write_acl']
+        return self.try_deny(req) or self.forward_request(req)
 
 class RgwiftApp(object):
     def __init__(self, conf):
