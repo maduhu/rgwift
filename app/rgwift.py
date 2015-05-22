@@ -25,8 +25,10 @@ class BaseController(object):
         return
 
     def __str__(self):
-        return '{0}: {1}, {2}, {3}, {4}'.format(type(self).__name__, self.ver,
-            self.account, self.container, self.obj)
+        return '{0}: {1}, {2}, {3}, {4}'.format(
+            type(self).__name__, self.ver,
+            self.account, self.container, self.obj
+        )
 
     def clean_acls(self, req):
         if 'swift.clean_acl' not in req.environ:
@@ -160,8 +162,8 @@ class ObjectController(BaseController):
         try:
             # The key name might be a litte misleading, so be informed it's
             # just an alias to well-known X-Container-Read HTTP header.
-            # ACL-related HTTP headers (X-Container-{Read, Write}) are converted
-            # into {read, write}_acl by headers_to_container_info().
+            # ACL-related HTTP headers (X-Container-{Read, Write}) are
+            # converted into {read, write}_acl by headers_to_container_info().
             req.acl = container_info['read_acl']
         except (KeyError):
             pass
