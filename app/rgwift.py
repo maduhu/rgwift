@@ -61,7 +61,7 @@ class BaseController(object):
         if 'wsgi.url_scheme' not in req.environ:
             req.environ['wsgi.url_scheme'] = 'http'
         return req.get_response(
-            WSGIProxyApp(href='http://127.0.0.1:8000/swift'))
+            WSGIProxyApp(href=self._app.forward_to))
 
     def GETorHEAD(self, req):
         return self.try_deny(req) or self.forward_request(req)
@@ -189,8 +189,11 @@ class ObjectController(BaseController):
         req.acl = container_info['write_acl']
         return self.try_deny(req) or self.forward_request(req)
 
+
 class RgwiftApp(object):
     def __init__(self, conf):
+        self.forward_to = \
+            str(conf.get('forward_to', 'http://127.0.0.1:8000/swift'))
         self.recheck_container_existence = \
             int(conf.get('recheck_container_existence', 60))
         self.recheck_account_existence = \
