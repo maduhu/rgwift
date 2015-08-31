@@ -174,6 +174,12 @@ class ObjectController(BaseController):
     def PUT(self, req):
         container_info = get_container_info(req.environ, self._app)
         req.acl = container_info['write_acl']
+        if req.environ['wsgi.input']:
+            req.body = req.environ['wsgi.input'].read()
+            try:
+                del req.environ['HTTP_TRANSFER_ENCODING']
+            except KeyError:
+                pass
         return self.try_deny(req) or self.clean_acls(req) or \
             self.forward_request(req)
 
