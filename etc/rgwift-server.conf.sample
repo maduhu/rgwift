@@ -1,10 +1,10 @@
 [DEFAULT]
 bind_ip = 127.0.0.1
-bind_port = 9090
+bind_port = 7070
 # bind_timeout = 30
 # backlog = 4096
 # swift_dir = /etc/swift
-# user = swift
+user = adam
 
 # Enables exposing configuration settings via HTTP GET /info.
 # expose_info = true
@@ -76,10 +76,11 @@ bind_port = 9090
 # eventlet_debug = false
 
 [pipeline:main]
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache container_sync bulk tempurl ratelimit tempauth container-quotas account-quotas slo dlo proxy-logging proxy-server
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache container_sync bulk tempurl ratelimit     container-quotas account-quotas slo dlo proxy-logging rgwift
 
-[app:proxy-server]
-use = egg:swift#proxy
+[app:rgwift]
+paste.app_factory = rgwift:app_factory
+#use = call:rgwift:app_factory
 # You can override the default log routing for this app here:
 # set log_name = proxy-server
 # set log_facility = LOG_LOCAL0
@@ -267,13 +268,13 @@ user_test_tester3 = testing3
 # and have it in your main pipeline so instead of having tempauth in
 # there you can change it to: authtoken keystoneauth
 #
-# [filter:authtoken]
-# paste.filter_factory = keystonemiddleware.auth_token:filter_factory
-# identity_uri = http://keystonehost:35357/
-# auth_uri = http://keystonehost:5000/
-# admin_tenant_name = service
-# admin_user = swift
-# admin_password = password
+[filter:authtoken]
+paste.filter_factory = keystonemiddleware.auth_token:filter_factory
+identity_uri = http://localhost:35357/
+auth_uri = http://localhost:5000/
+admin_tenant_name = service
+admin_user = swift
+admin_password = password
 #
 # delay_auth_decision defaults to False, but leaving it as false will
 # prevent other auth systems, staticweb, tempurl, formpost, and ACLs from
@@ -283,14 +284,14 @@ user_test_tester3 = testing3
 # cache = swift.cache
 # include_service_catalog = False
 #
-# [filter:keystoneauth]
-# use = egg:swift#keystoneauth
+[filter:keystoneauth]
+use = egg:swift#keystoneauth
 # Operator roles is the role which user would be allowed to manage a
 # tenant and be able to create container or give ACL to others.
 # operator_roles = admin, swiftoperator
 #
 # The reseller admin role has the ability to create and delete accounts
-# reseller_admin_role = ResellerAdmin
+reseller_admin_role = ResellerAdmin
 #
 # This allows middleware higher in the WSGI pipeline to override auth
 # processing, useful for middleware such as tempurl and formpost. If you know
