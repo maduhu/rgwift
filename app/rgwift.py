@@ -172,16 +172,14 @@ class ObjectController(BaseController):
 
     @public
     def PUT(self, req):
-        container_info = get_container_info(req.environ, self._app)
-        req.acl = container_info['write_acl']
-        if req.environ['wsgi.input']:
-            req.body = req.environ['wsgi.input'].read()
-            try:
-                del req.environ['HTTP_TRANSFER_ENCODING']
-            except KeyError:
-                pass
-        return self.try_deny(req) or self.clean_acls(req) or \
-            self.forward_request(req)
+        try:
+            container_info = get_container_info(req.environ, self._app)
+            req.acl = container_info['write_acl']
+
+            return self.try_deny(req) or self.clean_acls(req) or \
+                self.forward_request(req)
+        except Exception as ex:
+            print ex
 
     @public
     def COPY(self, req):
@@ -236,7 +234,7 @@ class RgwiftApp(object):
         try:
             controller = self.get_controller(req.path)
             wsgi_handler = self.get_handler(controller, req)
-        except:
+        except Exception as ex:
             raise
         else:
             # We need to return a WSGI callable which will be called

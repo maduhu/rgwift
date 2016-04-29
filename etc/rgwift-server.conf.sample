@@ -1,10 +1,13 @@
 [DEFAULT]
-bind_ip = 127.0.0.1
+bind_ip = 10.21.2.5
 bind_port = 7070
 # bind_timeout = 30
 # backlog = 4096
 # swift_dir = /etc/swift
-user = adam
+user = root
+forward_to = http://10.21.1.4:6780
+workers = 1
+notification_driver=messaging
 
 # Enables exposing configuration settings via HTTP GET /info.
 # expose_info = true
@@ -76,7 +79,12 @@ user = adam
 # eventlet_debug = false
 
 [pipeline:main]
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache container_sync bulk tempurl ratelimit     container-quotas account-quotas slo dlo proxy-logging rgwift
+pipeline = authtoken audit rgwift
+
+
+[filter:audit]
+paste.filter_factory = keystonemiddleware.audit:filter_factory
+audit_map_file = /etc/pycadf/glance_api_audit_map.conf
 
 [app:rgwift]
 paste.app_factory = rgwift:app_factory
@@ -270,11 +278,12 @@ user_test_tester3 = testing3
 #
 [filter:authtoken]
 paste.filter_factory = keystonemiddleware.auth_token:filter_factory
-identity_uri = http://localhost:35357/
-auth_uri = http://localhost:5000/
-admin_tenant_name = service
+identity_uri = http://10.21.2.2:35357/
+auth_uri = http://10.21.2.2:35357/v2.0
+admin_tenant_name = services
 admin_user = swift
-admin_password = password
+admin_password = FDRgz7mF
+
 #
 # delay_auth_decision defaults to False, but leaving it as false will
 # prevent other auth systems, staticweb, tempurl, formpost, and ACLs from
@@ -338,7 +347,7 @@ use = egg:swift#memcache
 # memcache.conf (see memcache.conf-sample) or lacking that file, it will
 # default to the value below. You can specify multiple servers separated with
 # commas, as in: 10.1.2.3:11211,10.1.2.4:11211
-# memcache_servers = 127.0.0.1:11211
+memcache_servers = 10.21.2.5:11211
 #
 # Sets how memcache values are serialized and deserialized:
 # 0 = older, insecure pickle serialization
@@ -649,3 +658,13 @@ use = egg:swift#xprofile
 #
 # unwind the iterator of applications
 # unwind = false
+
+
+[oslo_messaging_rabbit]
+rabbit_userid=nova
+rabbit_password=soanAvA5
+rabbit_ha_queues=True
+rabbit_virtual_host=/
+rabbit_use_ssl=False
+rabbit_hosts=10.21.2.5:5673
+
