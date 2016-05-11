@@ -234,7 +234,7 @@ class RgwiftApp(object):
         try:
             controller = self.get_controller(req.path)
             wsgi_handler = self.get_handler(controller, req)
-        except Exception as ex:
+        except:
             raise
         else:
             # We need to return a WSGI callable which will be called
