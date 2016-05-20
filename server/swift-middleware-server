@@ -17,7 +17,10 @@
 import sys
 from swift.common.utils import parse_options
 from swift.common.wsgi import run_wsgi
+from oslo_config import cfg
 
 if __name__ == '__main__':
     conf_file, options = parse_options()
+
+    cfg.CONF(['--config-file', conf_file], project='rgwift')
     sys.exit(run_wsgi(conf_file, 'rgwift', default_port=7070, **options))
